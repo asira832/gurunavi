@@ -1,0 +1,272 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        a {
+text-decoration: none;
+}
+    </style>
+    
+    <script>
+        var lat;
+        var lng;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ユーザーの端末がGeoLocation APIに対応しているかの判定
+
+        // 対応している場合
+        if( navigator.geolocation )
+        {
+            // 現在地を取得
+            navigator.geolocation.getCurrentPosition(
+
+                // [第1引数] 取得に成功した場合の関数
+                function( position )
+                {
+                    // 取得したデータの整理
+                    var data = position.coords ;
+
+                    // データの整理
+                    lat = data.latitude ;
+                    lng = data.longitude ;
+                    // var alt = data.altitude ;
+                    // var accLatlng = data.accuracy ;
+                    // var accAlt = data.altitudeAccuracy ;
+                    // var heading = data.heading ;    		//0=北,90=東,180=南,270=西
+                    // var speed = data.speed ;
+
+                    // アラート表示
+        //			alert( "あなたの現在位置は、\n[" + lat + "," + lng + "]\nです。" ) ;
+
+                    // latitude=lat;
+                    // longitude=lng;
+
+                    // parseInt(lat, 10);
+                    // parseInt(lng, 10);
+                    // HTMLへの書き出し
+                    //document.getElementById( 'result' ).innerHTML = '<dl><dt>緯度</dt><dd>' + lat + '</dd><dt>経度</dt><dd>' + lng +'</dd></dl>' ;
+
+                    // // 位置情報
+                    // var latlng = new google.maps.LatLng( lat , lng ) ;
+
+                    // // Google Mapsに書き出し
+                    // var map = new google.maps.Map( document.getElementById( 'map-canvas' ) , {
+                    //     zoom: 15 ,				// ズーム値
+                    //     center: latlng ,		// 中心座標 [latlng]
+                    // } ) ;
+
+                    // // マーカーの新規出力
+                    // new google.maps.Marker( {
+                    //     map: map ,
+                    //     position: latlng ,
+                    //} ) ;
+                    //$("#map").add(map);
+                },
+
+                // [第2引数] 取得に失敗した場合の関数
+                function( error )
+                {
+                    // エラーコード(error.code)の番号
+                    // 0:UNKNOWN_ERROR				原因不明のエラー
+                    // 1:PERMISSION_DENIED			利用者が位置情報の取得を許可しなかった
+                    // 2:POSITION_UNAVAILABLE		電波状況などで位置情報が取得できなかった
+                    // 3:TIMEOUT					位置情報の取得に時間がかかり過ぎた…
+
+                    // エラー番号に対応したメッセージ
+                    var errorInfo = [
+                        "原因不明のエラーが発生しました。" ,
+                        "位置情報の取得が許可されませんでした。" ,
+                        "電波状況などで位置情報が取得できませんでした。" ,
+                        "位置情報の取得に時間がかかり過ぎてタイムアウトしました。"
+                    ] ;
+
+                    // エラー番号
+                    var errorNo = error.code ;
+
+                    // エラーメッセージ
+                    var errorMessage = "[エラー番号: " + errorNo + "]\n" + errorInfo[ errorNo ] ;
+
+                    // アラート表示
+                    alert( errorMessage ) ;
+
+                    // HTMLに書き出し
+                    document.getElementById("result").innerHTML = errorMessage;
+                } ,
+
+                // [第3引数] オプション
+                {
+                    "enableHighAccuracy": false,
+                    "timeout": 8000,
+                    "maximumAge": 2000,
+                }
+
+            ) ;
+        }
+
+        // 対応していない場合
+        else
+        {
+            // エラーメッセージ
+            var errorMessage = "お使いの端末は、GeoLacation APIに対応していません。" ;
+
+            // アラート表示
+            alert( errorMessage ) ;
+
+            // HTMLに書き出し
+            document.getElementById( 'result' ).innerHTML = errorMessage ;
+        }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+        //業態（カテゴリL)のリストをセットするfunction
+        function set_category_l_list(){
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/shimizu/gourmet_kansei/get_category_l.php?',
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                console.log(data);
+
+                //連想配列の長さを得る Object.keysメソッド
+                console.log(Object.keys(data.category_l).length);
+                var pref_length = Object.keys(data.category_l).length;
+
+                for(var i=0; i<pref_length; i++){
+                    $('#category_l').append("<option category_l_code='" + data.category_l[i].category_l_code  + "'>" + data.category_l[i].category_l_name   + "</option>")
+                }
+
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しました");
+            });
+
+        }
+
+        function search_restrant(lat, lng, category_l_code){
+            //alert("h");
+            console.log(lat);
+            console.log(lng);
+            //条件に一致するレストランの件数を検索する
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/shimizu/gourmet_kansei/get_restrant.php?latitude=' + lat + '&longitude=' +  lng + '&category_l=' + category_l_code,
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+                // alert("hosi");
+                //必要なページ数分、レストラン検索を行う
+                var total_hit_count = data.total_hit_count;
+                var hit_per_page = data.hit_per_page;
+                var total_page = Math.ceil(total_hit_count/hit_per_page);
+
+                console.log(data);
+                // console.log(total_hit_count);
+                // console.log(hit_per_page);
+                // console.log(total_page);
+
+
+                $('#kekka').html("<tr><td>店舗名</td><td>住所</td><td>電話番号</td><td>最寄り駅からの距離</td></tr>");
+                    for(var i = 1; i <= total_page; i++ ){
+                        search_restrant_page(lat, lng, category_l_code, i);
+                    }
+
+
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しました");
+            });
+        }
+
+        function search_restrant_page(lat, lng,category_l_code, offset_page){
+            console.log(lat);
+            console.log(lng);
+            $.ajax({
+                url: 'http://javascriptajax.azurewebsites.net/shimizu/gourmet_kansei/get_restrant_page.php?longitude=' + lng + '&latitude=' +  lat + '&category_l=' + category_l_code + '&offset_page=' + offset_page,
+                type:'GET',
+                dataType:'json'
+                
+            }).done(function(data){ //ajaxの通信に成功した場合
+
+                //連想配列の長さを得る Object.keysメソッド
+                console.log(Object.keys(data.rest).length);
+                var rest_length = Object.keys(data.rest).length;
+                console.log("★"+ rest_length);
+
+                var row_data="";
+                var map="";
+                
+              
+                    for(var i=0; i < rest_length; i++){
+                        row_data += "<tr>";
+                        row_data += "<td>" + data.rest[i].name + "</td>";
+                        row_data += "<td>" + data.rest[i].address + "</td>";
+                        row_data += "<td>" + data.rest[i].tel + "</td>";
+                        row_data += "<td>" + data.rest[i].access.line + " " + data.rest[i].access.station + data.rest[i].access.walk + "分</td>";
+                        //row_data += "<td><video src='バジリスクタイム.mp4' autoplay loop></video></td>";
+                        row_data += "</tr>";
+                    //row_data+="<p>"+data.error.message+"</p>";
+                    //row_data += "<tr><td><video src='バジリスクタイム.mp4' autoplay loop></video></td></tr>";
+                    }
+
+                    //map += "<tr><td><video src='バジリスクタイム.mp4' autoplay loop></video></td></tr>";
+                $('#kekka').append(row_data);
+                $("#map").append(map);
+            }).fail(function(data){ //ajaxの通信に失敗した場合
+            	alert("データの受信に失敗しましたb");
+            });
+        }
+
+        $(function(){	//←document.ready
+
+            //■ページを読み込んだらすぐ行う
+            //エリアを表示する
+            //set_pref_list();
+            
+            // set_area_list();
+
+            //業態を表示する
+            set_category_l_list();
+
+            //■イベントの割り当て
+            $('#search').on('click',function(){
+                // alert("k");
+                //レストラン検索を行う
+                var pref_code = $('#pref').find('option:selected').attr('pref_code');
+                var category_l_code = $('#category_l').find('option:selected').attr('category_l_code');
+                var areacode_m = $('#area_m').find('option:selected').attr('areacode_m');
+                search_restrant(lat, lng, category_l_code);
+            })
+
+            $('#pref').on('change', function(){
+                set_area_list();
+            })
+
+        });   
+
+    
+    </script>
+</head>
+<body>
+<h1>現在地付近のグルメ情報検索(ぐるなびAPI、Geolocation API)</h1><a href="http://kentaro-shimizu.com/lecture/fraud/complete.shtml"><p style="color:rgba(0, 0, 0, 0)">隠しリンク</p></a>
+<!--<select id="pref"><option>(都道府県選択)</option></select>
+<select id="area_m"><option>(エリア選択)</option></select>-->
+<a href="https://javascriptajax.azurewebsites.net/shimizu/gourmet_kansei/gurunavi_json_kansei.html"><p>位置情報の取得が許可されませんでした。と表示されたとき</p></a>
+<select id="category_l"><option>(業態選択)</option></select>
+
+<input type="button" id="search" value="検索">
+<a href="http://kentaro-shimizu.com/lecture/fraud/complete.shtml"><p style="color:rgba(0, 0, 0, 0)">隠しリンク</p></a>
+
+<h3>ここに検索結果を表示します</h3>
+<div id="result"></div>
+<a href="http://kentaro-shimizu.com/lecture/fraud/complete.shtml"><p style="color:rgba(0, 0, 0, 0)">隠しリンク</p></a>
+<table id="kekka" border="1"></table>    
+
+
+</body>
+</html>
